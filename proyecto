@@ -1,0 +1,220 @@
+import java.util.Scanner;
+
+public class Tienda {
+    private static double caja = 0.0;
+    private static int numVentas = 0;
+    private static int numCompras = 0;
+    private static double totalVentas = 0.0;
+    private static double totalCompras = 0.0;
+    private static double mayorGananciaVenta = 0.0;
+    private static double mayorGastoCompra = 0.0;
+    private static String productoEstrella = "";
+    private static double efectivoInicial = 0.0;
+
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+        int opcion;
+        do {
+            mostrarMenu();
+            opcion = scanner.nextInt();
+            switch (opcion) {
+                case 1:
+                    abrirCaja(scanner);
+                    break;
+                case 2:
+                    realizarVenta(scanner);
+                    break;
+                case 3:
+                    realizarCompra(scanner);
+                    break;
+                case 4:
+                    generarReportes();
+                    break;
+                case 5:
+                    cierreCaja(scanner);
+                    break;
+                case 6:
+                    System.out.println("Saliendo del sistema...");
+                    break;
+                default:
+                    System.out.println("Opción inválida. Por favor, seleccione una opción válida.");
+                    break;
+            }
+        } while (opcion != 6);
+        scanner.close();
+    }
+
+    private static void mostrarMenu() {
+        System.out.println("1. Abrir Caja");
+        System.out.println("2. Ventas");
+        System.out.println("3. Compras");
+        System.out.println("4. Reportes");
+        System.out.println("5. Cierre de Caja");
+        System.out.println("6. Salir del Sistema");
+        System.out.print("Seleccione una opción: ");
+    }
+
+    private static void abrirCaja(Scanner scanner) {
+        System.out.print("Ingrese el monto a agregar a la caja: Lps ");
+        double monto = scanner.nextDouble();
+        caja += monto;
+        System.out.println("Caja actual: Lps " + caja);
+    }
+
+    private static void realizarVenta(Scanner scanner) {
+        System.out.print("Ingrese tipo de cliente (A, B o C): ");
+        char tipoCliente = scanner.next().charAt(0);
+        double subtotal = 0.0;
+        boolean continuar = true;
+
+        while (continuar) {
+            System.out.print("Ingrese código del producto a vender (1-4): ");
+            int codigoProducto = scanner.nextInt();
+            double precio = obtenerPrecioVenta(codigoProducto);
+
+            if (precio == -1 || !clientePuedeComprar(tipoCliente, codigoProducto)) {
+                System.out.println("Producto no disponible para este tipo de cliente.");
+            } else {
+                System.out.print("Ingrese cantidad en kilogramos: ");
+                double cantidad = scanner.nextDouble();
+                subtotal += cantidad * precio;
+            }
+
+            System.out.print("¿Desea comprar otro producto? (S/N): ");
+            char respuesta = scanner.next().charAt(0);
+            continuar = respuesta == 'S' || respuesta == 's';
+        }
+
+        double descuento = calcularDescuento(subtotal);
+        double impuesto = subtotal * 0.07;
+        double total = subtotal - descuento + impuesto;
+
+        System.out.println("Detalle de la venta:");
+        System.out.println("Subtotal: Lps " + subtotal);
+        System.out.println("Descuento: Lps " + descuento);
+        System.out.println("Impuesto (7%): Lps " + impuesto);
+        System.out.println("Total a pagar: Lps " + total);
+
+        caja += total;
+        numVentas++;
+        totalVentas += total;
+        if (total > mayorGananciaVenta) {
+            mayorGananciaVenta = total;
+        }
+
+
+
+        System.out.println("Venta realizada con éxito.");
+    }
+
+    private static void realizarCompra(Scanner scanner) {
+        System.out.print("Ingrese tipo de proveedor (A, B o C): ");
+        char tipoProveedor = scanner.next().charAt(0);
+        System.out.print("Ingrese código del producto a comprar (1-4): ");
+        int codigoProducto = scanner.nextInt();
+        double precioCompra = obtenerPrecioCompra(codigoProducto);
+
+        if (precioCompra == -1 || !proveedorPuedeSuministrar(tipoProveedor, codigoProducto)) {
+            System.out.println("Proveedor no vende dicho producto.");
+            return;
+        }
+
+        System.out.print("Ingrese cantidad en kilogramos: ");
+        double cantidad = scanner.nextDouble();
+        double costoTotal = cantidad * precioCompra;
+
+        if (caja < costoTotal) {
+            System.out.println("No se puede pagar la compra.");
+            return;
+        }
+
+        caja -= costoTotal;
+        numCompras++;
+        totalCompras += costoTotal;
+        if (costoTotal > mayorGastoCompra) {
+            mayorGastoCompra = costoTotal;
+        }
+
+        System.out.println("Compra realizada con éxito.");
+    }
+
+    private static void generarReportes() {
+        System.out.println("Cantidad Actual en Caja: Lps " + caja);
+        System.out.println("Número de Ventas: " + numVentas);
+        System.out.println("Número de Compras: " + numCompras);
+        System.out.println("Volumen total de Ventas: Lps " + totalVentas);
+        System.out.println("Volumen total de Compras: Lps " + totalCompras);
+        System.out.println("Mayor Ganancia en Venta: Lps " + mayorGananciaVenta);
+        System.out.println("Mayor Gasto en Compra: Lps " + mayorGastoCompra);
+    }
+
+    private static void cierreCaja(Scanner scanner) {
+        System.out.println("Total en caja al cierre: Lps " + caja);
+        System.out.print("¿Cuánto desea depositar en el banco? (máximo 60% del efectivo): Lps ");
+        double cantidadDepositar = scanner.nextDouble();
+        double maximoDeposito = caja * 0.60;
+
+        if (cantidadDepositar > maximoDeposito) {
+            System.out.println("Cantidad excede el máximo permitido. Se depositará Lps " + maximoDeposito);
+            cantidadDepositar = maximoDeposito;
+        }
+
+        caja -= cantidadDepositar;
+        System.out.println("Efectivo restante en caja para el siguiente día: Lps " + caja);
+
+        numVentas = 0;
+        numCompras = 0;
+        totalVentas = 0.0;
+        totalCompras = 0.0;
+        mayorGananciaVenta = 0.0;
+        mayorGastoCompra = 0.0;
+        System.out.println("Caja cerrada exitosamente.");
+    }
+
+    private static double obtenerPrecioVenta(int codigoProducto) {
+        switch (codigoProducto) {
+            case 1: return 20.0;
+            case 2: return 30.0;
+            case 3: return 25.0;
+            case 4: return 40.0;
+            default: return -1;
+        }
+    }
+
+    private static double obtenerPrecioCompra(int codigoProducto) {
+        switch (codigoProducto) {
+            case 1: return 15.0;
+            case 2: return 25.0;
+            case 3: return 20.0;
+            case 4: return 35.0;
+            default: return -1;
+        }
+    }
+
+    private static boolean clientePuedeComprar(char tipoCliente, int codigoProducto) {
+        switch (tipoCliente) {
+            case 'A': return true;
+            case 'B': return codigoProducto == 1 || codigoProducto == 2 || codigoProducto == 3;
+            case 'C': return codigoProducto == 4;
+            default: return false;
+        }
+    }
+
+    private static boolean proveedorPuedeSuministrar(char tipoProveedor, int codigoProducto) {
+        switch (tipoProveedor) {
+            case 'A': return codigoProducto == 1 || codigoProducto == 4;
+            case 'B': return codigoProducto == 2 || codigoProducto == 3;
+            case 'C': return codigoProducto == 2;
+            default: return false;
+        }
+    }
+
+    private static double calcularDescuento(double subtotal) {
+        if (subtotal >= 5000) {
+            return subtotal * 0.10;
+        } else if (subtotal >= 1000) {
+            return subtotal * 0.05;
+        }
+        return 0.0;
+    }
+}
